@@ -1,0 +1,40 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:allchan} Three Momentum Channels: Joint Estimation and Robustness. \textit{Notes.} Column 1 is the preferred specification: linear probability model for whether the drive ends in a score, with all three momentum indicators jointly. Column 2 drops drives in garbage time (absolute score differential $\geq 21$ in the fourth quarter). Column 3 replaces the binary outcome with the sum of expected-points-added (EPA) on the drive. All columns include game-state controls (field position, score differential, quarter, half-seconds remaining) and game and possessing-team fixed effects. Standard errors in parentheses, two-way clustered by game and possessing team \citep{cameron2011robust}. $^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$.}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & \multicolumn{2}{c}{Drive ends in score (0/1)} & Drive EPA\\
+      Model:                                  & (1)                            & (2)                            & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      Prior own defensive stop                & 0.0204$^{***}$                 & 0.0239$^{***}$                 & -0.1650$^{***}$\\   
+                                              & (0.0063)                       & (0.0067)                       & (0.0437)\\   
+      Prior own offensive score               & -0.0423$^{***}$                & -0.0461$^{***}$                & -0.2417$^{***}$\\   
+                                              & (0.0039)                       & (0.0037)                       & (0.0313)\\   
+      Prior opponent offensive score          & -0.3271$^{***}$                & -0.3248$^{***}$                & -0.5034$^{***}$\\   
+                                              & (0.0063)                       & (0.0067)                       & (0.0530)\\   
+      Field position (yards to opp. end zone) & -0.0067$^{***}$                & -0.0067$^{***}$                & -0.0032$^{***}$\\   
+                                              & (0.0001)                       & (0.0001)                       & (0.0008)\\   
+      Score differential                      & 0.0003$^{*}$                   & 0.0007$^{***}$                 & 0.0012\\   
+                                              & (0.0002)                       & (0.0002)                       & (0.0014)\\   
+      Quarter                                 & -0.0163$^{***}$                & -0.0128$^{***}$                & -0.0976$^{***}$\\   
+                                              & (0.0018)                       & (0.0020)                       & (0.0126)\\   
+      Half seconds remaining                  & $-1.37\times 10^{-5}$$^{***}$  & $-1.85\times 10^{-5}$$^{***}$  & $-5.72\times 10^{-5}$$^{*}$\\    
+                                              & ($3.75\times 10^{-6}$)         & ($3.7\times 10^{-6}$)          & ($2.87\times 10^{-5}$)\\    
+      \midrule
+      \emph{Fixed-effects}\\
+      Game                                    & Yes                            & Yes                            & Yes\\  
+      Possessing team                         & Yes                            & Yes                            & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                            & 73,842                         & 71,090                         & 73,842\\  
+      R$^2$                                   & 0.13389                        & 0.13544                        & 0.07815\\  
+      Within R$^2$                            & 0.07098                        & 0.07086                        & 0.00417\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (Game \& Possessing team) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

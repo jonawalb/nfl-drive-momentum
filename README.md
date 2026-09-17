@@ -1,0 +1,163 @@
+# Drive-Level Momentum in the NFL — Replication Package
+
+**Paper:** *Drive-Level Momentum in the NFL: Field Position Eats Most of It, and What Remains Cuts the Other Way*
+**Target venue:** Journal of Quantitative Analysis in Sports (JQAS)
+**Author:** [redacted for blind review]
+**Replication package version:** 1.0 (2026-05-08)
+
+This package contains everything required to reproduce every number, table, and
+figure in the paper, starting either from the raw `nflfastR` play-by-play feed
+(`code/01_build_drives.R`) or from the cached drive-level dataset
+(`data/drives.csv`).
+
+## Reproduction at a glance
+
+| Step | Script | Inputs | Outputs | Runtime |
+|------|--------|--------|---------|---------|
+| 1 | `code/01_build_drives.R` | `nflfastR` 2010–2024 pbp (live fetch) | `data/drives.{rds,csv}` | ~3 min |
+| 2 | `code/02_analyze_momentum.R` | `data/drives.rds` | `data/{models,key_nums}.rds`, `tables/{tab_descrip,tab_h1_progression,tab_all_channels}.tex`, `figures/fig{1,2}_*` | ~45 sec |
+| 3 | `code/03_robustness.R` | `data/drives.rds` | `data/robustness.rds` (R1–R7 robustness gauntlet: flexible FP, placebo, logit, permutation, post-kickoff/punt, heterogeneity, era split) | ~3 min |
+| 4 | `pdflatex` + `bibtex` | `paper_NEWEST.tex`, `references_NEWEST.bib`, `figures/*`, `tables/*` | `paper_NEWEST.pdf` | ~15 sec |
+
+A one-line wrapper `run_all.sh` runs steps 1–4 sequentially with logging.
+
+Reviewers who do not want to wait on the live `nflfastR` fetch can skip Step 1
+— `data/drives.csv` is shipped with the package.
+
+## Software requirements
+
+- **R ≥ 4.5** (tested on 4.5.0, arm64 macOS).
+- **R packages**: `nflfastR` (≥ 5.2.0), `fixest`, `modelsummary`, `data.table`,
+  `dplyr`, `ggplot2`, `broom`, `here`.
+- **LaTeX**: TeX Live 2023 or later (tested on 2024). Required packages:
+  `geometry`, `amsmath`, `amssymb`, `booktabs`, `graphicx`, `natbib`,
+  `setspace`, `hyperref`, `caption`.
+- Internet access for Step 1 only (`nflfastR` fetches pbp from GitHub).
+
+A frozen `sessionInfo()` from the most recent successful run is included at
+`replication_logs/sessionInfo.txt`.
+
+## Reproduce
+
+```bash
+# 0. Install R packages (~5 min on a clean R install)
+R -e 'install.packages(
+       c("nflfastR","fixest","modelsummary","data.table",
+         "dplyr","ggplot2","broom","here"),
+       repos="https://cloud.r-project.org")'
+
+# Run the full pipeline (steps 1-4) with logs
+bash run_all.sh
+
+# Or run steps individually:
+Rscript code/01_build_drives.R          # (Optional) rebuild drives from nflfastR
+Rscript code/02_analyze_momentum.R      # main regressions, figures, tables
+Rscript code/03_robustness.R            # 7-check robustness gauntlet
+pdflatex paper_NEWEST.tex && bibtex paper_NEWEST && pdflatex paper_NEWEST.tex && pdflatex paper_NEWEST.tex
+```
+
+All scripts use `here::here()` and resolve paths relative to the project root
+(`.here` sentinel file). They can be run from any working directory.
+
+## File manifest
+
+```
+.here                          # here-package project anchor
+LICENSE                        # MIT (code) + data lineage notes
+README.md                      # this file
+run_all.sh                     # One-shot pipeline runner
+
+paper_NEWEST.tex               # Revised paper (post-triage)
+paper_NEWEST.pdf               # Compiled revised paper
+references_NEWEST.bib          # Bibliography for paper_NEWEST.tex
+
+momentum.tex                   # ORIGINAL paper (preserved for audit)
+momentum.pdf                   # ORIGINAL compiled paper (preserved)
+refs.bib                       # ORIGINAL bibliography (preserved)
+
+PRE_SUBMISSION_REVIEW_*.md     # 6-agent referee report
+code_review_report.md          # Paper-code alignment review
+triage_decisions.md            # Audit trail of revision decisions
+
+code/
+  01_build_drives.R            # Builds drive-level dataset from nflfastR pbp
+  02_analyze_momentum.R        # Runs all regressions, figures, tables, key_nums
+  03_robustness.R              # R1-R7 robustness gauntlet (CRITICAL pre-submission)
+
+data/
+  drives.csv                   # Drive-level dataset (~86k drives, 24 MB)
+  drives.rds                   # Same, compressed R serialization (5.5 MB)
+  models.rds                   # Saved fixest model objects
+  key_nums.rds                 # Headline numbers used in the .tex
+  robustness.rds               # R1-R7 robustness output (paper_NEWEST cites these)
+
+figures/
+  fig1_field_position.{pdf,png}
+  fig2_coef_plot.{pdf,png}
+  interactive/                 # d3.js companion supplement (web)
+    nfl_three_channels.html    # Interactive 3-channel decomposition
+    data.json
+
+tables/
+  tab_descrip.tex              # Programmatically generated descriptive table
+  tab_h1_progression.tex       # H1 progressive controls
+  tab_all_channels.tex         # Three-channel joint estimation + robustness
+  fp_decile_rates.csv          # Conditional P(score) by field-position decile
+
+replication_logs/              # Auto-generated by run_all.sh
+  01_build_drives.log
+  02_analyze_momentum.log
+  03_robustness.log
+  sessionInfo.txt
+  STATUS                       # PIPELINE_OK if last run succeeded
+```
+
+## Headline numbers (verification targets)
+
+A successful re-run should reproduce these to within 0.1 pp (any deviation
+reflects upstream `nflfastR` revisions, not code differences):
+
+- 4,078 games, 86,360 drives, 73,842 in the unified estimation sample
+- P(score | prior defensive stop) = 0.522 unconditional
+- P(score | else) = 0.356 unconditional
+- Joint LPM with game + team FE and full state controls:
+  - prior defensive stop: **+2.0 pp** (s.e. 0.6)
+  - prior own scoring drive: **−4.2 pp** (s.e. 0.4)
+  - prior opponent scoring drive: **−32.7 pp** (s.e. 0.6)
+
+Inspect `data/key_nums.rds` (`readRDS("data/key_nums.rds")`) for the full
+machine-readable record of these figures.
+
+## Data provenance and licensing
+
+All play-by-play data are sourced from
+[`nflfastR`](https://www.nflfastr.com/), maintained by Sebastian Carl and Ben
+Baldwin. `nflfastR` extends the `nflscrapR` pipeline of Yurko, Ventura, and
+Horowitz (2018). Both packages are MIT-licensed; the underlying play-by-play
+records are derived from publicly broadcast NFL game data.
+
+The replication code is released under the MIT license (see `LICENSE`). The
+shipped `data/drives.csv` is a derivative of `nflfastR`'s public output and is
+provided here under the same terms.
+
+## Notes on the design
+
+- **Linear probability model** preferred over logit because the FE structure is
+  high-dimensional (one fixed effect per game + 32 team fixed effects). The
+  marginal-effect interpretation maps directly to percentage points and avoids
+  the incidental-parameters bias that afflicts FE logit.
+- **Standard errors** are two-way clustered by `game_id` and `posteam`
+  following Cameron, Gelbach, and Miller (2011).
+- **Drive aggregation** uses `nflfastR`'s `fixed_drive`, which corrects
+  irregularities in the raw NFL drive numbering. End-of-half kneel-down drives
+  and end-of-game drives are dropped.
+- **Lag construction**: prior own-offensive drives are walked back through any
+  intervening opponent possessions; the implementation is `build_lags()` in
+  `code/01_build_drives.R`.
+
+## Provenance
+
+Drafted via the Agent Charlie autonomous research pipeline on 2026-04-27;
+promoted to active project folder `~/Desktop/Working PS Papers/15 - NFL
+Momentum/` on 2026-05-08. Replication package prepared for JQAS submission on
+the same date.

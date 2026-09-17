@@ -1,0 +1,42 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:h1prog} Defensive Stop Spillover (H1): Progressive Controls. \textit{Notes.} OLS linear probability models. Dependent variable is an indicator for whether the drive ends in a touchdown or field goal. Sample: NFL regular season + postseason 2010--2024 (nflfastR). Game-state controls (field position, score differential, quarter, half-seconds remaining, home indicator) included in columns 2--4 with coefficients suppressed for readability. Standard errors in parentheses, two-way clustered by game and possessing team \citep{cameron2011robust}. $^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$.}
+   \centering
+   \begin{tabular}{lcccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variable: & \multicolumn{4}{c}{Drive ends in score (0/1)}\\
+      Model:                                  & (1)            & (2)                           & (3)                           & (4)\\  
+      \midrule
+      \emph{Variables}\\
+      Constant                                & 0.3562$^{***}$ & 0.5348$^{***}$                &                               &   \\   
+                                              & (0.0062)       & (0.0095)                      &                               &   \\   
+      Prior own defensive stop                & 0.1626$^{***}$ & 0.1466$^{***}$                & 0.1470$^{***}$                & 0.1735$^{***}$\\   
+                                              & (0.0055)       & (0.0052)                      & (0.0052)                      & (0.0055)\\   
+      Field position (yards to opp. end zone) &                & -0.0029$^{***}$               & -0.0029$^{***}$               & -0.0021$^{***}$\\   
+                                              &                & ($7.74\times 10^{-5}$)        & ($7.81\times 10^{-5}$)        & ($7.52\times 10^{-5}$)\\    
+      Score differential                      &                & 0.0017$^{***}$                & 0.0012$^{***}$                & 0.0012$^{***}$\\   
+                                              &                & (0.0002)                      & (0.0001)                      & (0.0002)\\   
+      Quarter                                 &                & -0.0134$^{***}$               & -0.0132$^{***}$               & -0.0139$^{***}$\\   
+                                              &                & (0.0015)                      & (0.0014)                      & (0.0016)\\   
+      Half seconds remaining                  &                & $1.38\times 10^{-5}$$^{***}$  & $1.44\times 10^{-5}$$^{***}$  & $1.56\times 10^{-5}$$^{***}$\\    
+                                              &                & ($3.17\times 10^{-6}$)        & ($3.16\times 10^{-6}$)        & ($3.39\times 10^{-6}$)\\    
+      Home offense                            &                & 0.0245$^{***}$                & 0.0253$^{***}$                &   \\   
+                                              &                & (0.0036)                      & (0.0036)                      &   \\   
+      \midrule
+      \emph{Fixed-effects}\\
+      Possessing team                         &                &                               & Yes                           & Yes\\  
+      Opponent                                &                &                               & Yes                           & \\  
+      Season                                  &                &                               & Yes                           & \\  
+      Game                                    &                &                               &                               & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                            & 73,842         & 73,842                        & 73,842                        & 73,842\\  
+      R$^2$                                   & 0.01455        & 0.03554                       & 0.04303                       & 0.09511\\  
+      Within R$^2$                            &                &                               & 0.03434                       & 0.02938\\  
+      \midrule \midrule
+      \multicolumn{5}{l}{\emph{Clustered (Game \& Possessing team) standard-errors in parentheses}}\\
+      \multicolumn{5}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

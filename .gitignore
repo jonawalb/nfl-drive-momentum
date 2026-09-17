@@ -1,0 +1,42 @@
+# OS
+.DS_Store
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.bbl
+*.blg
+*.out
+*.synctex.gz
+
+# Replication logs (regenerable)
+replication_logs/
+
+# Scratch / working files
+scratch/
+
+# JQAS submission artifacts
+submission_package/
+submission_package 2/
+submission_package.zip
+READY_TO_SUBMIT/
+cover_letter.*
+title_page.*
+declarations.md
+triage_decisions.md
+PRE_SUBMISSION_REVIEW_*.md
+code_review_report.md
+
+# Large regenerable model object
+data/models.rds
+
+# Old paper version (pre-revision)
+momentum.pdf
+momentum.tex
+refs.bib
+
+# Archives
+*.zip
+
+# Claude Code project config
+.claude/

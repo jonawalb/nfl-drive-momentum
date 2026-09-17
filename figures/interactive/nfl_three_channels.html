@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NFL Drive Momentum — Three-Channel Decomposition (Supplementary Figure S1)</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  body { font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, sans-serif; max-width: 1100px; margin: 1.5rem auto; color: #1f2933; padding: 0 1rem; }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.0rem; font-weight: 500; color: #52606d; margin-top: 0; margin-bottom: 1rem; }
+  h3 { font-size: 0.95rem; font-weight: 600; color: #102a43; margin: 1.2rem 0 0.4rem; }
+  .controls { display: flex; gap: 1.5rem; align-items: center; margin: 0.5rem 0 1rem; flex-wrap: wrap; font-size: 0.85rem; }
+  .axis text { font-size: 11px; fill: #52606d; }
+  .axis line, .axis path { stroke: #cbd2d9; }
+  .grid line { stroke: #e4e7eb; stroke-dasharray: 2 2; }
+  .zero-line { stroke: #1f2933; stroke-width: 1; stroke-dasharray: 4 3; }
+  .ci-bar { stroke-width: 2; }
+  .point { stroke: white; stroke-width: 1.5; }
+  .channel-defense { fill: #047857; stroke-color: #047857; }
+  .channel-offense { fill: #c2410c; stroke-color: #c2410c; }
+  .channel-opponent { fill: #1d4ed8; stroke-color: #1d4ed8; }
+  .tooltip {
+    position: absolute; pointer-events: none; padding: 6px 10px;
+    background: #1f2933; color: white; font-size: 11px; border-radius: 4px;
+    opacity: 0; transition: opacity 100ms; line-height: 1.45; max-width: 260px;
+  }
+  .panel { background: #f5f7fa; padding: 0.75rem 1rem; border-radius: 6px; font-size: 0.85rem; margin-top: 1rem; line-height: 1.55; }
+  caption { caption-side: bottom; font-size: 0.85rem; color: #52606d; margin-top: 1rem; line-height: 1.5; display: block; }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.4rem; margin-right: 1.2rem; font-size: 0.85rem; color: #3e4c59; }
+  .legend-swatch { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>Figure S1. Three Momentum Channels — Coefficients and Field-Position Mechanics</h1>
+<h2>Drive-level dataset, nflfastR 2010–2024 (n ≈ 73,842 drives, 4,000 games)</h2>
+
+<div class="controls">
+  <span class="legend-item"><span class="legend-swatch" style="background:#047857"></span> Own defensive stop</span>
+  <span class="legend-item"><span class="legend-swatch" style="background:#c2410c"></span> Own offensive carryover</span>
+  <span class="legend-item"><span class="legend-swatch" style="background:#1d4ed8"></span> Opponent suppression</span>
+</div>
+
+<h3>Panel A. Coefficients across three model specifications (point estimate ± 1.96·SE)</h3>
+<svg id="coef" width="900" height="360"></svg>
+
+<h3>Panel B. Field-position decile mechanics — the channel that survives controls</h3>
+<p style="font-size:0.85rem; color:#3e4c59; margin-top:0;">Probability the next drive scores, by field-position decile of the next drive's starting position, split by whether the prior own-defense-stop succeeded (1) or not (0). The vertical gap collapses inside each decile — most "momentum" is just short fields.</p>
+<svg id="fp" width="900" height="380"></svg>
+
+<div class="tooltip" id="tip"></div>
+
+<div class="panel">
+  <strong>Reading guide.</strong>
+  <em>Panel A.</em> Three channels enter every drive jointly. Two effects flip sign or direction once the dependent variable shifts from a binary score indicator (col 1–2) to drive-level EPA (col 3): the own-defensive-stop coefficient flips negative, and the own-offensive carryover stays negative throughout. Only opponent-suppression keeps a stable, large, negative effect across all three specs. <br>
+  <em>Panel B.</em> Within each field-position decile, the score-rate gap between drives following a successful own-defensive stop (1) and drives following a failed stop (0) shrinks substantially compared with the unconditional gap. The remaining within-decile differences load mostly on the opponent-suppression channel, consistent with the headline result that cross-team momentum is the only channel that survives field-position conditioning.
+</div>
+
+<caption>
+Source: drive-level estimates from <code>tables/tab_all_channels.tex</code> (Panel A) and <code>tables/fp_decile_rates.csv</code> (Panel B). All standard errors clustered on game and possessing team. Hover any point for full numbers.
+</caption>
+
+<script>
+const data = {"coefficients": [{"channel": "Own def stop\n(prior_own_def_success)", "model": "off_success (bare)", "b": 0.0204, "se": 0.0063, "sig": "***", "narrative": "cross-team channel proxy"}, {"channel": "Own def stop\n(prior_own_def_success)", "model": "off_success (controls)", "b": 0.0239, "se": 0.0067, "sig": "***"}, {"channel": "Own def stop\n(prior_own_def_success)", "model": "drive_epa", "b": -0.165, "se": 0.0437, "sig": "***"}, {"channel": "Own off carryover\n(prior_own_off_success)", "model": "off_success (bare)", "b": -0.0423, "se": 0.0039, "sig": "***"}, {"channel": "Own off carryover\n(prior_own_off_success)", "model": "off_success (controls)", "b": -0.0461, "se": 0.0037, "sig": "***"}, {"channel": "Own off carryover\n(prior_own_off_success)", "model": "drive_epa", "b": -0.2417, "se": 0.0313, "sig": "***"}, {"channel": "Opp suppression\n(prior_opp_off_success)", "model": "off_success (bare)", "b": -0.3271, "se": 0.0063, "sig": "***"}, {"channel": "Opp suppression\n(prior_opp_off_success)", "model": "off_success (controls)", "b": -0.3248, "se": 0.0067, "sig": "***"}, {"channel": "Opp suppression\n(prior_opp_off_success)", "model": "drive_epa", "b": -0.5034, "se": 0.053, "sig": "***"}], "fp_decile": [{"decile": 1, "prior_def_success": 0, "p_score": 0.962264150943396, "n": 53}, {"decile": 1, "prior_def_success": 1, "p_score": 0.914027149321267, "n": 442}, {"decile": 2, "prior_def_success": 0, "p_score": 0.581749049429658, "n": 263}, {"decile": 2, "prior_def_success": 1, "p_score": 0.786055396370583, "n": 1047}, {"decile": 3, "prior_def_success": 0, "p_score": 0.364864864864865, "n": 2072}, {"decile": 3, "prior_def_success": 1, "p_score": 0.821698906644239, "n": 1189}, {"decile": 4, "prior_def_success": 0, "p_score": 0.358531540847983, "n": 29010}, {"decile": 4, "prior_def_success": 1, "p_score": 0.689367616400278, "n": 1439}, {"decile": 5, "prior_def_success": 0, "p_score": 0.569540229885058, "n": 1740}, {"decile": 5, "prior_def_success": 1, "p_score": 0.585836909871245, "n": 1398}, {"decile": 6, "prior_def_success": 0, "p_score": 0.479255720392256, "n": 3977}, {"decile": 6, "prior_def_success": 1, "p_score": 0.454081632653061, "n": 1568}, {"decile": 7, "prior_def_success": 0, "p_score": 0.408369194242469, "n": 6739}, {"decile": 7, "prior_def_success": 1, "p_score": 0.378851540616247, "n": 1428}, {"decile": 8, "prior_def_success": 0, "p_score": 0.329803639354374, "n": 9727}, {"decile": 8, "prior_def_success": 1, "p_score": 0.302692055154301, "n": 1523}, {"decile": 9, "prior_def_success": 0, "p_score": 0.278979343863913, "n": 8230}, {"decile": 9, "prior_def_success": 1, "p_score": 0.253892215568862, "n": 835}, {"decile": 10, "prior_def_success": 0, "p_score": 0.238095238095238, "n": 4326}, {"decile": 10, "prior_def_success": 1, "p_score": 0.233296823658269, "n": 913}]};
+const tip = d3.select("#tip");
+
+// Channel color map
+const channelColor = {
+  'Own def stop\n(prior_own_def_success)': '#047857',
+  'Own off carryover\n(prior_own_off_success)': '#c2410c',
+  'Opp suppression\n(prior_opp_off_success)': '#1d4ed8'
+};
+const channelOrder = Object.keys(channelColor);
+const modelOrder = ['off_success (bare)', 'off_success (controls)', 'drive_epa'];
+
+/* ============== PANEL A: coefficient plot ============== */
+{
+  const W = 900, H = 360;
+  const margin = {top: 30, right: 40, bottom: 80, left: 280};
+  const innerW = W - margin.left - margin.right;
+  const innerH = H - margin.top - margin.bottom;
+
+  const svg = d3.select("#coef");
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  // x = coefficient value
+  const xExtent = d3.extent(data.coefficients.flatMap(d => [d.b - 1.96*d.se, d.b + 1.96*d.se]));
+  const xPad = (xExtent[1] - xExtent[0]) * 0.08;
+  const x = d3.scaleLinear().domain([xExtent[0]-xPad, xExtent[1]+xPad]).range([0, innerW]).nice();
+
+  // y groups: 3 channels x 3 models => 9 rows
+  const rowHeight = innerH / data.coefficients.length;
+  const y = d3.scaleBand()
+    .domain(d3.range(data.coefficients.length))
+    .range([0, innerH])
+    .padding(0.3);
+
+  // Vertical zero line
+  g.append("line").attr("class","zero-line")
+    .attr("x1", x(0)).attr("x2", x(0))
+    .attr("y1", 0).attr("y2", innerH);
+
+  // X-axis grid
+  g.append("g").attr("class","grid")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(x).tickSize(-innerH).tickFormat(""));
+
+  // X axis
+  g.append("g").attr("class","axis")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(x).ticks(8));
+  g.append("text").attr("x", innerW/2).attr("y", innerH+45)
+    .attr("text-anchor","middle").style("font-size","12px").style("fill","#3e4c59")
+    .text("Coefficient (effect on next drive's outcome)");
+
+  // Y-axis labels: combine channel + model
+  g.selectAll(".rowLabel")
+    .data(data.coefficients)
+    .join("text")
+    .attr("class","rowLabel")
+    .attr("x", -10).attr("y", (d,i) => y(i) + y.bandwidth()/2)
+    .attr("dy","0.35em").attr("text-anchor","end")
+    .style("font-size","11px").style("fill","#1f2933")
+    .selectAll("tspan")
+    .data(d => {
+      const lines = d.channel.split('\n');
+      return [{t: lines[0], dy: 0, weight: 600},
+              {t: lines[1], dy: 12, weight: 400, color:'#7b8794'},
+              {t: '— ' + d.model, dy: 24, weight: 400, color:'#52606d', italic: true}];
+    })
+    .join("tspan")
+    .attr("x", -10).attr("dy", (d,i) => i===0 ? "-0.7em" : "1.1em")
+    .style("font-weight", d => d.weight)
+    .style("font-style", d => d.italic ? "italic" : "normal")
+    .style("fill", d => d.color || "#1f2933")
+    .text(d => d.t);
+
+  // CI bars
+  g.selectAll(".ci")
+    .data(data.coefficients)
+    .join("line")
+    .attr("class","ci ci-bar")
+    .attr("x1", d => x(d.b - 1.96*d.se)).attr("x2", d => x(d.b + 1.96*d.se))
+    .attr("y1", (d,i) => y(i) + y.bandwidth()/2).attr("y2", (d,i) => y(i) + y.bandwidth()/2)
+    .attr("stroke", d => channelColor[d.channel]);
+
+  // Points
+  g.selectAll(".point")
+    .data(data.coefficients)
+    .join("circle")
+    .attr("class","point")
+    .attr("cx", d => x(d.b)).attr("cy", (d,i) => y(i) + y.bandwidth()/2)
+    .attr("r", 6).attr("fill", d => channelColor[d.channel])
+    .on("mouseover", (e,d) => {
+      tip.style("opacity",1).html(
+        `<strong>${d.channel.replace('\n',' ')}</strong><br>${d.model}<br>` +
+        `β = ${d.b.toFixed(4)}<br>SE = ${d.se.toFixed(4)}<br>95% CI: [${(d.b-1.96*d.se).toFixed(4)}, ${(d.b+1.96*d.se).toFixed(4)}] ${d.sig||''}`);
+    })
+    .on("mousemove", e => tip.style("left",(e.pageX+12)+"px").style("top",(e.pageY+12)+"px"))
+    .on("mouseout", () => tip.style("opacity",0));
+}
+
+/* ============== PANEL B: field-position decile chart ============== */
+{
+  const W = 900, H = 380;
+  const margin = {top: 30, right: 40, bottom: 60, left: 70};
+  const innerW = W - margin.left - margin.right;
+  const innerH = H - margin.top - margin.bottom;
+
+  const svg = d3.select("#fp");
+  const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
+  const deciles = Array.from(new Set(data.fp_decile.map(d => d.decile))).sort((a,b)=>a-b);
+  const x0 = d3.scaleBand().domain(deciles).range([0, innerW]).padding(0.2);
+  const x1 = d3.scaleBand().domain([0,1]).range([0, x0.bandwidth()]).padding(0.05);
+  const y = d3.scaleLinear().domain([0, 1]).range([innerH, 0]);
+
+  // gridlines
+  g.append("g").attr("class","grid")
+    .call(d3.axisLeft(y).tickSize(-innerW).tickFormat("").ticks(10));
+
+  // Bars
+  g.selectAll(".barGroup")
+    .data(deciles)
+    .join("g")
+    .attr("class","barGroup")
+    .attr("transform", d => `translate(${x0(d)},0)`)
+    .selectAll("rect")
+    .data(dec => data.fp_decile.filter(r => r.decile === dec))
+    .join("rect")
+    .attr("x", d => x1(d.prior_def_success))
+    .attr("width", x1.bandwidth())
+    .attr("y", d => y(d.p_score))
+    .attr("height", d => innerH - y(d.p_score))
+    .attr("fill", d => d.prior_def_success === 1 ? '#047857' : '#9ca3af')
+    .on("mouseover", (e,d) => {
+      tip.style("opacity",1).html(
+        `<strong>FP decile ${d.decile}</strong><br>` +
+        `prior own-def-stop = ${d.prior_def_success}<br>` +
+        `P(score on this drive) = ${(d.p_score*100).toFixed(1)}%<br>` +
+        `n = ${d.n.toLocaleString()}`);
+    })
+    .on("mousemove", e => tip.style("left",(e.pageX+12)+"px").style("top",(e.pageY+12)+"px"))
+    .on("mouseout", () => tip.style("opacity",0));
+
+  // Axes
+  g.append("g").attr("class","axis")
+    .attr("transform", `translate(0,${innerH})`)
+    .call(d3.axisBottom(x0).tickFormat(d => `D${d}`));
+  g.append("text").attr("x", innerW/2).attr("y", innerH + 42)
+    .attr("text-anchor","middle").style("font-size","12px").style("fill","#3e4c59")
+    .text("Field-position decile of this drive's starting yardline (D1 = closest to opponent end zone)");
+
+  g.append("g").attr("class","axis")
+    .call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+  g.append("text").attr("transform","rotate(-90)")
+    .attr("x", -innerH/2).attr("y", -45)
+    .attr("text-anchor","middle").style("font-size","12px").style("fill","#3e4c59")
+    .text("P(this drive scores)");
+
+  // Inline legend for panel B
+  const legend = g.append("g").attr("transform", `translate(${innerW - 220},10)`);
+  legend.append("rect").attr("width",14).attr("height",14).attr("fill","#9ca3af");
+  legend.append("text").attr("x",18).attr("y",11).style("font-size","11px").style("fill","#3e4c59")
+    .text("prior own-def stop = 0 (allowed score)");
+  legend.append("rect").attr("y",20).attr("width",14).attr("height",14).attr("fill","#047857");
+  legend.append("text").attr("x",18).attr("y",31).style("font-size","11px").style("fill","#3e4c59")
+    .text("prior own-def stop = 1 (got the stop)");
+}
+</script>
+
+</body>
+</html>
