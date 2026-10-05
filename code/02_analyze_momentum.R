@@ -18,7 +18,8 @@ FIG_DIR  <- here::here("figures")
 dir.create(TAB_DIR, recursive = TRUE, showWarnings = FALSE)
 dir.create(FIG_DIR, recursive = TRUE, showWarnings = FALSE)
 
-d <- readRDS(file.path(DATA_DIR, "drives.rds"))
+## FIX 2026-10-05: v2 drives (field position = offense's first scrimmage play)
+d <- readRDS(file.path(DATA_DIR, "drives_v2.rds"))
 setDT(d)
 
 ## Drop drives with missing core fields
@@ -53,7 +54,7 @@ fp_table <- d[!is.na(prior_own_def_success),
               .(p_score = mean(off_success), n = .N),
               by = .(fp_decile, prior_own_def_success)][order(fp_decile, prior_own_def_success)]
 print(fp_table)
-fwrite(fp_table, file.path(TAB_DIR, "fp_decile_rates.csv"))
+fwrite(fp_table, file.path(TAB_DIR, "fp_decile_rates_v2.csv"))
 
 ## ============================================================================
 ## Main regressions: linear probability with team + game + opponent FE
@@ -64,6 +65,18 @@ fwrite(fp_table, file.path(TAB_DIR, "fp_decile_rates.csv"))
 d_main <- d[!is.na(prior_own_def_success) & !is.na(prior_own_off_success) &
             !is.na(prior_opp_off_success)]
 cat("\nUnified estimation sample:", nrow(d_main), "drives\n")
+
+## FIX 2026-10-05: lead placebo -- the OPPONENT'S NEXT drive outcome. It cannot
+## cause the current drive, so any coefficient on it measures mechanical bias
+## (e.g., from game fixed effects with ~18 drives per game).
+setorder(d_main, game_id, drive_idx)
+d_lead <- d[order(game_id, drive_idx),
+            .(drive_idx, lead_posteam = shift(posteam, type = "lead"),
+              lead_off = shift(off_success, type = "lead"),
+              lead_yl = shift(yardline_100, type = "lead")), by = game_id]
+d_main <- merge(d_main, d_lead, by = c("game_id", "drive_idx"), all.x = TRUE)
+d_main[, lead_opp_off_success := fifelse(!is.na(lead_posteam) & lead_posteam != posteam,
+                                         lead_off, NA_integer_)]
 
 ## Helper: standardized starting field position (0 = own goal line, 100 = opp end zone)
 d_main[, yfg := 100 - yardline_100]   # yards FROM own goal -> distance gained perspective
@@ -93,12 +106,39 @@ m4_game <- feols(off_success ~ prior_own_def_success +
                  data = d_main, cluster = ~game_id + posteam)
 
 ## ---- Specification 5: All three momentum channels jointly -----------------
+## FIX 2026-10-05: headline spec drops game FE. With ~18 drives per game, game
+## FE plus lagged within-game outcomes produce a mechanical negative bias (the
+## lead placebo below "predicts" the current drive under game FE). Headline =
+## possessing-team + opponent + season FE, with the home indicator the text
+## describes (the v1 m5 omitted home_off).
 m5_all <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                   prior_opp_off_success +
                   yardline_100 + score_differential + qtr +
-                  half_seconds_remaining |
-                  game_id + posteam,
+                  half_seconds_remaining + home_off |
+                  posteam + defteam + season,
                 data = d_main, cluster = ~game_id + posteam)
+
+## ---- Robustness: v1 game-FE spec and lead placebos (FIX 2026-10-05) -------
+m5_gamefe <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
+                     prior_opp_off_success +
+                     yardline_100 + score_differential + qtr +
+                     half_seconds_remaining |
+                     game_id + posteam,
+                   data = d_main, cluster = ~game_id + posteam)
+m5_lead <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
+                   prior_opp_off_success + lead_opp_off_success +
+                   yardline_100 + score_differential + qtr +
+                   half_seconds_remaining + home_off |
+                   posteam + defteam + season,
+                 data = d_main[!is.na(lead_opp_off_success)],
+                 cluster = ~game_id + posteam)
+m5_gamefe_lead <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
+                          prior_opp_off_success + lead_opp_off_success +
+                          yardline_100 + score_differential + qtr +
+                          half_seconds_remaining |
+                          game_id + posteam,
+                        data = d_main[!is.na(lead_opp_off_success)],
+                        cluster = ~game_id + posteam)
 
 ## ---- Specification 6: Interact prior_own_def_success with field position --
 ## If "momentum" is real, the boost should NOT be entirely mechanical short field.
@@ -106,16 +146,16 @@ m5_all <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
 d_main[, fp_decile := factor(fp_decile)]
 m6_intx <- feols(off_success ~ prior_own_def_success * fp_decile +
                    prior_own_off_success + prior_opp_off_success +
-                   score_differential + qtr + half_seconds_remaining |
-                   game_id + posteam,
+                   score_differential + qtr + half_seconds_remaining + home_off |
+                   posteam + defteam + season,
                  data = d_main, cluster = ~game_id + posteam)
 
 ## ---- Specification 7: Drop garbage time -----------------------------------
 m7_nogt <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                    prior_opp_off_success +
                    yardline_100 + score_differential + qtr +
-                   half_seconds_remaining |
-                   game_id + posteam,
+                   half_seconds_remaining + home_off |
+                   posteam + defteam + season,
                  data = d_main[garbage_time == 0],
                  cluster = ~game_id + posteam)
 
@@ -123,9 +163,25 @@ m7_nogt <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
 m8_epa <- feols(drive_epa ~ prior_own_def_success + prior_own_off_success +
                   prior_opp_off_success +
                   yardline_100 + score_differential + qtr +
-                  half_seconds_remaining |
-                  game_id + posteam,
+                  half_seconds_remaining + home_off |
+                  posteam + defteam + season,
                 data = d_main, cluster = ~game_id + posteam)
+
+## Diagnostic: lead placebo holding the opponent's next starting field position
+m5_lead_fp <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
+                      prior_opp_off_success + lead_opp_off_success + lead_yl +
+                      yardline_100 + score_differential + qtr +
+                      half_seconds_remaining + home_off |
+                      posteam + defteam + season,
+                    data = d_main[!is.na(lead_opp_off_success)],
+                    cluster = ~game_id + posteam)
+m5_gamefe_lead_fp <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
+                             prior_opp_off_success + lead_opp_off_success + lead_yl +
+                             yardline_100 + score_differential + qtr +
+                             half_seconds_remaining |
+                             game_id + posteam,
+                           data = d_main[!is.na(lead_opp_off_success)],
+                           cluster = ~game_id + posteam)
 
 ## ============================================================================
 ## Tables
@@ -146,7 +202,8 @@ var_dict <- c(
   posteam               = "Possessing team",
   defteam               = "Opponent",
   game_id               = "Game",
-  season                = "Season"
+  season                = "Season",
+  lead_opp_off_success  = "Placebo: opponent's NEXT drive scores"
 )
 
 models_main <- list(
@@ -160,6 +217,12 @@ models_full <- list(
   "(1) All three channels" = m5_all,
   "(2) Drop garbage time"  = m7_nogt,
   "(3) EPA outcome"        = m8_epa
+)
+
+models_gamefe <- list(
+  "(1) Headline + lead placebo" = m5_lead,
+  "(2) Game FE (v1 spec)"       = m5_gamefe,
+  "(3) Game FE + lead placebo"  = m5_gamefe_lead
 )
 
 cat("\n\n===== MAIN H1 PROGRESSION =====\n")
@@ -196,9 +259,25 @@ allchan_notes <- paste0(
   "possessing team \\citep{cameron2011robust}. ",
   "$^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$."
 )
+## FIX 2026-10-05: headline FE are possessing team, opponent, season (no game FE)
+allchan_notes <- sub("game and possessing-team fixed ",
+                     "possessing-team, opponent, and season fixed ", allchan_notes, fixed = TRUE)
+allchan_notes <- sub("half-seconds remaining)", "half-seconds remaining, home indicator)",
+                     allchan_notes, fixed = TRUE)
+allchan_notes <- paste0("Field position is the yardline of the offense's first scrimmage play. ",
+                        allchan_notes)
+gamefe_notes <- paste0(
+  "\\textit{Notes.} Linear probability models; dependent variable is whether the drive ends ",
+  "in a score. The placebo regressor is whether the opponent's NEXT drive (after the current ",
+  "drive) ends in a score; it cannot affect the current drive, so a non-zero coefficient ",
+  "indicates mechanical bias. Column 1 is the headline specification (possessing-team, ",
+  "opponent, and season fixed effects) plus the placebo. Columns 2--3 use the v1 game and ",
+  "possessing-team fixed effects. Standard errors two-way clustered by game and possessing ",
+  "team \\citep{cameron2011robust}. $^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$."
+)
 
 etable(models_main, tex = TRUE,
-       file = file.path(TAB_DIR, "tab_h1_progression.tex"),
+       file = file.path(TAB_DIR, "tab_h1_progression_v2.tex"),
        title = paste0("Defensive Stop Spillover (H1): Progressive Controls. ", h1_notes),
        label = "tab:h1prog",
        dict = var_dict,
@@ -206,9 +285,17 @@ etable(models_main, tex = TRUE,
        replace = TRUE)
 
 etable(models_full, tex = TRUE,
-       file = file.path(TAB_DIR, "tab_all_channels.tex"),
+       file = file.path(TAB_DIR, "tab_all_channels_v2.tex"),
        title = paste0("Three Momentum Channels: Joint Estimation and Robustness. ", allchan_notes),
        label = "tab:allchan",
+       dict = var_dict,
+       drop = c("yardline_100","score_differential","qtr","half_seconds","home_off"),
+       replace = TRUE)
+
+etable(models_gamefe, tex = TRUE,
+       file = file.path(TAB_DIR, "tab_gamefe_placebo_v2.tex"),
+       title = paste0("Game Fixed Effects and the Lead Placebo. ", gamefe_notes),
+       label = "tab:gamefe",
        dict = var_dict,
        drop = c("yardline_100","score_differential","qtr","half_seconds","home_off"),
        replace = TRUE)
@@ -265,11 +352,11 @@ descrip_tex <- c(
   "\\\\[0.5em]",
   "\\begin{minipage}{0.95\\textwidth}",
   "\\footnotesize",
-  "\\textit{Notes.} Each panel uses the largest sample for which the relevant prior-drive indicator is defined; sample size therefore differs across panels (the unified estimation sample requiring all three indicators is N = 73{,}842 drives). Sample: NFL regular season + postseason 2010--2024 from nflfastR. ",
+  "\\textit{Notes.} Each panel uses the largest sample for which the relevant prior-drive indicator is defined; sample size therefore differs across panels (the unified estimation sample requiring all three indicators is N = ", format(nrow(d_main), big.mark = "{,}"), " drives). Sample: NFL regular season + postseason 2010--2024 from nflfastR. ",
   "\\end{minipage}",
   "\\end{table}"
 )
-writeLines(descrip_tex, file.path(TAB_DIR, "tab_descrip.tex"))
+writeLines(descrip_tex, file.path(TAB_DIR, "tab_descrip_v2.tex"))
 
 ## ============================================================================
 ## Figures
@@ -293,7 +380,7 @@ p1 <- ggplot(fp_plot, aes(x = fp_mid, y = p_score, color = condition)) +
   geom_ribbon(aes(ymin = p_score - 1.96*se, ymax = p_score + 1.96*se,
                   fill = condition), alpha = 0.15, color = NA) +
   scale_x_reverse(breaks = seq(10, 100, 10)) +
-  labs(x = "Yards from opponent end zone (drive start; lower = closer to scoring)",
+  labs(x = "Yards from opponent end zone (first scrimmage play; lower = closer to scoring)",
        y = "P(drive ends in TD or FG)",
        color = NULL, fill = NULL,
        title = "Scoring probability by drive starting field position",
@@ -301,8 +388,8 @@ p1 <- ggplot(fp_plot, aes(x = fp_mid, y = p_score, color = condition)) +
   theme_minimal(base_size = 11) +
   theme(legend.position = "bottom")
 
-ggsave(file.path(FIG_DIR, "fig1_field_position.pdf"), p1, width = 7, height = 4.5)
-ggsave(file.path(FIG_DIR, "fig1_field_position.png"), p1, width = 7, height = 4.5, dpi = 200)
+ggsave(file.path(FIG_DIR, "fig1_field_position_v2.pdf"), p1, width = 7, height = 4.5)
+ggsave(file.path(FIG_DIR, "fig1_field_position_v2.png"), p1, width = 7, height = 4.5, dpi = 200)
 
 ## Figure 2: Coefficient plot of the three momentum channels (model 5)
 coef_dt <- as.data.table(broom::tidy(m5_all, conf.int = TRUE))
@@ -321,18 +408,19 @@ p2 <- ggplot(coef_dt, aes(x = estimate, y = term_label)) +
   labs(x = "Effect on P(scoring drive)",
        y = NULL,
        title = "Three drive-level momentum channels",
-       subtitle = "LPM with game and team FEs; cluster SEs (game, team); 95% CI") +
+       subtitle = "LPM with team, opponent, season FEs; cluster SEs (game, team); 95% CI") +
   theme_minimal(base_size = 11)
 
-ggsave(file.path(FIG_DIR, "fig2_coef_plot.pdf"), p2, width = 7, height = 3.5)
-ggsave(file.path(FIG_DIR, "fig2_coef_plot.png"), p2, width = 7, height = 3.5, dpi = 200)
+ggsave(file.path(FIG_DIR, "fig2_coef_plot_v2.pdf"), p2, width = 7, height = 3.5)
+ggsave(file.path(FIG_DIR, "fig2_coef_plot_v2.png"), p2, width = 7, height = 3.5, dpi = 200)
 
 ## ============================================================================
 ## Save model objects + key numbers for paper
 ## ============================================================================
 saveRDS(list(m1=m1_naive, m2=m2_state, m3=m3_fe, m4=m4_game,
-             m5=m5_all, m6=m6_intx, m7=m7_nogt, m8=m8_epa),
-        file.path(DATA_DIR, "models.rds"))
+             m5=m5_all, m6=m6_intx, m7=m7_nogt, m8=m8_epa,
+             m5_gamefe=m5_gamefe, m5_lead=m5_lead, m5_gamefe_lead=m5_gamefe_lead),
+        file.path(DATA_DIR, "models_v2.rds"))
 
 key_nums <- list(
   n_drives_total      = nrow(d),
@@ -366,9 +454,41 @@ key_nums <- list(
   # EPA model
   beta_h1_epa  = coef(m8_epa)["prior_own_def_success"],
   beta_h2_epa  = coef(m8_epa)["prior_own_off_success"],
-  beta_h3_epa  = coef(m8_epa)["prior_opp_off_success"]
+  beta_h3_epa  = coef(m8_epa)["prior_opp_off_success"],
+  se_h1_epa    = sqrt(diag(vcov(m8_epa)))["prior_own_def_success"],
+  se_h2_epa    = sqrt(diag(vcov(m8_epa)))["prior_own_off_success"],
+  se_h3_epa    = sqrt(diag(vcov(m8_epa)))["prior_opp_off_success"],
+
+  # FIX 2026-10-05: game-FE robustness and lead placebos
+  beta_h1_gamefe = coef(m5_gamefe)["prior_own_def_success"],
+  beta_h2_gamefe = coef(m5_gamefe)["prior_own_off_success"],
+  beta_h3_gamefe = coef(m5_gamefe)["prior_opp_off_success"],
+  se_h3_gamefe   = sqrt(diag(vcov(m5_gamefe)))["prior_opp_off_success"],
+  beta_lead_headline = coef(m5_lead)["lead_opp_off_success"],
+  se_lead_headline   = sqrt(diag(vcov(m5_lead)))["lead_opp_off_success"],
+  beta_lead_gamefe   = coef(m5_gamefe_lead)["lead_opp_off_success"],
+  se_lead_gamefe     = sqrt(diag(vcov(m5_gamefe_lead)))["lead_opp_off_success"],
+  pval_h1_joint = pvalue(m5_all)["prior_own_def_success"],
+  pval_h2_joint = pvalue(m5_all)["prior_own_off_success"],
+  pval_h3_joint = pvalue(m5_all)["prior_opp_off_success"],
+  beta_nogt_h1 = coef(m7_nogt)["prior_own_def_success"],
+  beta_nogt_h2 = coef(m7_nogt)["prior_own_off_success"],
+  beta_nogt_h3 = coef(m7_nogt)["prior_opp_off_success"],
+  se_h1_teamFE = sqrt(diag(vcov(m3_fe)))["prior_own_def_success"],
+  se_h1_naive  = sqrt(diag(vcov(m1_naive)))["prior_own_def_success"],
+  fp_mean_by_prior_opp = d_main[, .(fp = mean(yardline_100),
+                                    fp_v1 = mean(yardline_100_firstrow, na.rm = TRUE)),
+                                by = prior_opp_off_success],
+  share_post_score_at_35_v1 = d_main[prior_opp_off_success == 1,
+                                     mean(yardline_100_firstrow == 35, na.rm = TRUE)],
+  # Lead "placebo" is not fully clean: the current drive's outcome sets the
+  # opponent's next starting field position. Diagnostic: add that field position.
+  beta_lead_headline_fpctrl = coef(m5_lead_fp)["lead_opp_off_success"],
+  se_lead_headline_fpctrl   = sqrt(diag(vcov(m5_lead_fp)))["lead_opp_off_success"],
+  beta_lead_gamefe_fpctrl   = coef(m5_gamefe_lead_fp)["lead_opp_off_success"],
+  se_lead_gamefe_fpctrl     = sqrt(diag(vcov(m5_gamefe_lead_fp)))["lead_opp_off_success"]
 )
-saveRDS(key_nums, file.path(DATA_DIR, "key_nums.rds"))
+saveRDS(key_nums, file.path(DATA_DIR, "key_nums_v2.rds"))
 
 cat("\n\nKEY NUMBERS:\n")
 str(key_nums)

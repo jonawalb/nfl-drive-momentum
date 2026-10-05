@@ -1,0 +1,43 @@
+
+\begin{table}[htbp]
+   \caption{\label{tab:allchan} Three Momentum Channels: Joint Estimation and Robustness. Field position is the yardline of the offense's first scrimmage play. \textit{Notes.} Column 1 is the preferred specification: linear probability model for whether the drive ends in a score, with all three momentum indicators jointly. Column 2 drops drives in garbage time (absolute score differential $\geq 21$ in the fourth quarter). Column 3 replaces the binary outcome with the sum of expected-points-added (EPA) on the drive. All columns include game-state controls (field position, score differential, quarter, half-seconds remaining, home indicator) and possessing-team, opponent, and season fixed effects. Standard errors in parentheses, two-way clustered by game and possessing team \citep{cameron2011robust}. $^{*}p<0.10$, $^{**}p<0.05$, $^{***}p<0.01$.}
+   \centering
+   \begin{tabular}{lccc}
+      \tabularnewline \midrule \midrule
+      Dependent Variables: & \multicolumn{2}{c}{Drive ends in score (0/1)} & Drive EPA\\
+      Model:                                  & (1)                           & (2)                           & (3)\\  
+      \midrule
+      \emph{Variables}\\
+      Prior own defensive stop                & -0.0049                       & -0.0025                       & -0.2852$^{***}$\\   
+                                              & (0.0056)                      & (0.0058)                      & (0.0432)\\   
+      Prior own offensive score               & 0.0229$^{***}$                & 0.0207$^{***}$                & 0.1623$^{***}$\\   
+                                              & (0.0043)                      & (0.0041)                      & (0.0331)\\   
+      Prior opponent offensive score          & -0.0060$^{*}$                 & -0.0049                       & 0.0006\\   
+                                              & (0.0035)                      & (0.0035)                      & (0.0347)\\   
+      Field position (yards to opp. end zone) & -0.0082$^{***}$               & -0.0081$^{***}$               & -0.0075$^{***}$\\   
+                                              & (0.0001)                      & (0.0001)                      & (0.0009)\\   
+      Score differential                      & -0.0005$^{***}$               & -0.0001                       & -0.0022\\   
+                                              & (0.0002)                      & (0.0002)                      & (0.0014)\\   
+      Quarter                                 & -0.0113$^{***}$               & -0.0080$^{***}$               & -0.0914$^{***}$\\   
+                                              & (0.0015)                      & (0.0016)                      & (0.0106)\\   
+      Half seconds remaining                  & $2.08\times 10^{-5}$$^{***}$  & $1.66\times 10^{-5}$$^{***}$  & $-9.33\times 10^{-6}$\\    
+                                              & ($3.54\times 10^{-6}$)        & ($3.46\times 10^{-6}$)        & ($2.8\times 10^{-5}$)\\    
+      Home offense                            & 0.0228$^{***}$                & 0.0219$^{***}$                & 0.0243\\   
+                                              & (0.0037)                      & (0.0039)                      & (0.0269)\\   
+      \midrule
+      \emph{Fixed-effects}\\
+      Possessing team                         & Yes                           & Yes                           & Yes\\  
+      Opponent                                & Yes                           & Yes                           & Yes\\  
+      Season                                  & Yes                           & Yes                           & Yes\\  
+      \midrule
+      \emph{Fit statistics}\\
+      Observations                            & 74,120                        & 71,368                        & 74,120\\  
+      R$^2$                                   & 0.09089                       & 0.09078                       & 0.01039\\  
+      Within R$^2$                            & 0.08262                       & 0.08235                       & 0.00240\\  
+      \midrule \midrule
+      \multicolumn{4}{l}{\emph{Clustered (Game \& Possessing team) standard-errors in parentheses}}\\
+      \multicolumn{4}{l}{\emph{Signif. Codes: ***: 0.01, **: 0.05, *: 0.1}}\\
+   \end{tabular}
+\end{table}
+
+

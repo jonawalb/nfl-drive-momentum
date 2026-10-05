@@ -26,7 +26,9 @@ DATA_DIR <- here::here("data")
 TAB_DIR  <- here::here("tables")
 FIG_DIR  <- here::here("figures")
 
-d <- readRDS(file.path(DATA_DIR, "drives.rds"))
+## FIX 2026-10-05: v2 drives (field position = first scrimmage play) and the
+## headline FE structure (possessing team + opponent + season; no game FE).
+d <- readRDS(file.path(DATA_DIR, "drives_v2.rds"))
 setDT(d)
 d <- d[!is.na(off_success) & !is.na(yardline_100) & !is.na(score_differential)]
 d[, def_success := fifelse(is.na(def_success), 0L, def_success)]
@@ -50,8 +52,8 @@ d_main[, sd_bin := cut(score_differential,
 
 m_flexFP <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                     prior_opp_off_success +
-                    sd_bin + qtr + half_seconds_remaining |
-                    game_id + posteam + fp_decile,
+                    sd_bin + qtr + half_seconds_remaining + home_off |
+                    posteam + defteam + season + fp_decile,
                   data = d_main, cluster = ~game_id + posteam)
 
 cat("  H1 flexible:", round(coef(m_flexFP)["prior_own_def_success"], 4), "\n")
@@ -84,8 +86,8 @@ placebo_sample <- d_main[prev_was_td == 1 | prev_was_fg == 1]
 
 m_placebo <- feols(off_success ~ prev_was_td +
                      yardline_100 + score_differential + qtr +
-                     half_seconds_remaining |
-                     game_id + posteam,
+                     half_seconds_remaining + home_off |
+                     posteam + defteam + season,
                    data = placebo_sample, cluster = ~game_id + posteam)
 
 cat("  Sample size (post-TD or post-FG only):", nrow(placebo_sample), "\n")
@@ -109,8 +111,8 @@ cat("\n===== R3: Logit/probit comparison and OOB check =====\n")
 m_lpm <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                  prior_opp_off_success +
                  yardline_100 + score_differential + qtr +
-                 half_seconds_remaining |
-                 game_id + posteam,
+                 half_seconds_remaining + home_off |
+                 posteam + defteam + season,
                data = d_main, cluster = ~game_id + posteam)
 
 lpm_pred <- predict(m_lpm)
@@ -123,8 +125,8 @@ cat("  LPM predicted-probability OOB share: <0:",
 m_logit <- feglm(off_success ~ prior_own_def_success + prior_own_off_success +
                    prior_opp_off_success +
                    yardline_100 + score_differential + qtr +
-                   half_seconds_remaining |
-                   posteam,
+                   half_seconds_remaining + home_off |
+                   posteam + defteam + season,
                  data = d_main, family = binomial("logit"),
                  cluster = ~game_id + posteam)
 
@@ -170,8 +172,8 @@ beta_h3_perm <- numeric(n_perm)
 beta_h3_obs  <- coef(m5 <- feols(
   off_success ~ prior_own_def_success + prior_own_off_success +
     prior_opp_off_success +
-    yardline_100 + score_differential + qtr + half_seconds_remaining |
-    game_id + posteam,
+    yardline_100 + score_differential + qtr + half_seconds_remaining + home_off |
+    posteam + defteam + season,
   data = d_main, cluster = ~game_id + posteam))["prior_opp_off_success"]
 
 cat("  Observed H3:", round(beta_h3_obs, 4), "\n")
@@ -183,8 +185,8 @@ for (b in seq_len(n_perm)) {
   m_perm <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                     prior_opp_off_perm +
                     yardline_100 + score_differential + qtr +
-                    half_seconds_remaining |
-                    game_id + posteam,
+                    half_seconds_remaining + home_off |
+                    posteam + defteam + season,
                   data = d_perm_base, se = "iid")
   beta_h3_perm[b] <- coef(m_perm)["prior_opp_off_perm"]
   if (b %% 100 == 0) cat("    perm", b, "/", n_perm,
@@ -228,14 +230,14 @@ post_to      <- d_main[prev_was_to == 1]
 
 m_kickoff <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                      yardline_100 + score_differential + qtr +
-                     half_seconds_remaining |
-                     game_id + posteam,
+                     half_seconds_remaining + home_off |
+                     posteam + defteam + season,
                    data = post_kickoff, cluster = ~game_id + posteam)
 
 m_punt <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                   yardline_100 + score_differential + qtr +
-                  half_seconds_remaining |
-                  game_id + posteam,
+                  half_seconds_remaining + home_off |
+                  posteam + defteam + season,
                 data = post_punt, cluster = ~game_id + posteam)
 
 cat("  Post-kickoff (opp scored) sample:", nrow(post_kickoff),
@@ -267,8 +269,8 @@ m_het <- feols(off_success ~ prior_own_def_success + prior_own_off_success +
                  prior_opp_off_success * close_game +
                  prior_opp_off_success * late_game +
                  yardline_100 + score_differential + qtr +
-                 half_seconds_remaining |
-                 game_id + posteam,
+                 half_seconds_remaining + home_off |
+                 posteam + defteam + season,
                data = d_main, cluster = ~game_id + posteam)
 
 cat("  H3 main effect:                       ",
@@ -310,8 +312,8 @@ for (e in eras) {
     feols(off_success ~ prior_own_def_success + prior_own_off_success +
             prior_opp_off_success +
             yardline_100 + score_differential + qtr +
-            half_seconds_remaining |
-            game_id + posteam,
+            half_seconds_remaining + home_off |
+            posteam + defteam + season,
           data = sub, cluster = ~game_id + posteam),
     error = function(err) { cat("  era", e, "fit failed:", err$message, "\n"); NULL }
   )
@@ -335,7 +337,7 @@ results$R7 <- era_results
 ## ============================================================================
 ## Save robustness results
 ## ============================================================================
-saveRDS(results, file.path(DATA_DIR, "robustness.rds"))
+saveRDS(results, file.path(DATA_DIR, "robustness_v2.rds"))
 
 ## Build a single robustness summary table
 build_robustness_table <- function(results) {
@@ -374,5 +376,5 @@ build_robustness_table <- function(results) {
 cat("\n\n========== ROBUSTNESS SUMMARY ==========\n")
 cat(paste(build_robustness_table(results), collapse = "\n"), "\n")
 
-cat("\nSaved: data/robustness.rds\n")
+cat("\nSaved: data/robustness_v2.rds\n")
 cat("Done.\n")

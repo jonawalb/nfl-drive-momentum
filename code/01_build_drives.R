@@ -1,6 +1,7 @@
 ## 01_build_drives.R
 ## Build drive-level dataset from nflfastR play-by-play 2010-2024
-## Output: data/drives.rds with one row per offensive drive
+## Output: data/drives_v2.rds with one row per offensive drive
+## (v2, 2026-10-05: field position from first scrimmage play)
 
 suppressPackageStartupMessages({
   library(nflfastR)
@@ -44,6 +45,21 @@ last_play  <- pbp[order(game_id, fixed_drive, play_id),
 play_cnt <- pbp[, .(plays = .N,
                     drive_yards = sum(yards_gained, na.rm = TRUE)),
                 by = drive_keys]
+
+## FIX 2026-10-05: drive-start field position must come from the offense's
+## first SCRIMMAGE play, not the drive's first row. nflfastR assigns the kickoff
+## to the receiving team's drive, so after an opponent score the first row is
+## the kickoff (yardline_100 = 35 = the kicking spot), which mis-coded 91% of
+## post-score drives as short-field drives and manufactured the old H3 effect.
+## Kickoffs and no_play rows are skipped; drives with no scrimmage play (e.g.,
+## kickoff-return TDs) get NA field position and drop from the analysis sample.
+scrim_start <- pbp[order(game_id, fixed_drive, play_id)][
+  !is.na(play_type) & !(play_type %in% c("kickoff", "no_play")) &
+    kickoff_attempt == 0 & !is.na(yardline_100),
+  .(yardline_100_scrim = yardline_100[1]), by = drive_keys]
+first_play <- merge(first_play, scrim_start, by = drive_keys, all.x = TRUE)
+setnames(first_play, "yardline_100", "yardline_100_firstrow")
+setnames(first_play, "yardline_100_scrim", "yardline_100")
 
 drives <- merge(first_play, last_play, by = drive_keys)
 drives <- merge(drives, play_cnt, by = drive_keys)
@@ -163,8 +179,10 @@ drives[, home_off := as.integer(posteam == home_team)]
 drives <- drives[!drive_result %in% c("End of half","End of game") | is.na(drive_result)]
 
 ## Save -----------------------------------------------------------------------
-saveRDS(drives, file.path(DATA_DIR, "drives.rds"))
-fwrite(drives, file.path(DATA_DIR, "drives.csv"))
+## FIX 2026-10-05: versioned outputs; v1 drives.{rds,csv} (kickoff-spot
+## field position) are kept untouched for audit.
+saveRDS(drives, file.path(DATA_DIR, "drives_v2.rds"))
+fwrite(drives, file.path(DATA_DIR, "drives_v2.csv"))
 
 cat("Saved drives:", nrow(drives), "rows\n")
 cat("  off_success rate:", round(mean(drives$off_success), 3), "\n")

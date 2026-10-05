@@ -1,0 +1,26 @@
+\begin{table}[htbp]
+\centering
+\caption{Unconditional drive-level scoring probabilities by prior context.}
+\label{tab:descrip}
+\begin{tabular}{lcc}
+\toprule
+Condition & P(score) & N drives \\
+\midrule
+After own defensive stop & 0.523 & 11,824 \\
+After opponent score or longer punt & 0.356 & 66,378 \\
+\midrule
+After own offensive score (prior own drive) & 0.403 & 28,625 \\
+After own offensive non-score & 0.370 & 49,554 \\
+\midrule
+After opponent score (prior opp drive) & 0.352 & 31,193 \\
+After opponent non-score & 0.400 & 50,910 \\
+\bottomrule
+\end{tabular}
+\\[0.5em]
+\begin{minipage}{0.95\textwidth}
+\footnotesize
+\textit{Notes.} Each panel uses the largest sample for which the relevant prior-drive indicator is defined; sample size therefore differs across panels (the unified estimation sample requiring all three indicators is N = 
+74{,}125
+ drives). Sample: NFL regular season + postseason 2010--2024 from nflfastR. 
+\end{minipage}
+\end{table}

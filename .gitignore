@@ -40,3 +40,4 @@ refs.bib
 
 # Claude Code project config
 .claude/
+data/models_v2.rds

@@ -25,13 +25,13 @@ Rscript code/03_robustness.R 2>&1 | tee replication_logs/03_robustness.log
 echo "=== Step 4: Capture sessionInfo ==="
 R --vanilla --quiet -e 'sessionInfo()' > replication_logs/sessionInfo.txt 2>&1
 
-echo "=== Step 5: Compile paper_NEWEST.tex ==="
+echo "=== Step 5: Compile paper_v2.tex ==="
 if command -v pdflatex >/dev/null 2>&1; then
-  pdflatex -interaction=nonstopmode paper_NEWEST.tex > replication_logs/pdflatex_pass1.log 2>&1
-  bibtex paper_NEWEST > replication_logs/bibtex.log 2>&1 || true
-  pdflatex -interaction=nonstopmode paper_NEWEST.tex > replication_logs/pdflatex_pass2.log 2>&1
-  pdflatex -interaction=nonstopmode paper_NEWEST.tex > replication_logs/pdflatex_pass3.log 2>&1
-  echo "Compiled: paper_NEWEST.pdf"
+  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass1.log 2>&1
+  bibtex paper_v2 > replication_logs/bibtex.log 2>&1 || true
+  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass2.log 2>&1
+  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass3.log 2>&1
+  echo "Compiled: paper_v2.pdf"
 else
   echo "pdflatex not found; skipping LaTeX compile."
 fi
