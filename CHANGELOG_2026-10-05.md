@@ -6,3 +6,10 @@
 - `paper_v2.tex` / `.pdf`: joint H1/H2/H3 +2.0/−4.2/−32.7 → −0.5/+2.3/−0.6 pp; robustness numbers replaced; new R9 (game FE −1.0/−3.8/−6.6, lead placebo −10.4 vs −3.5; −7.7 vs −0.4 holding next start fixed); H1 now absorbed by field position; v1 Discussion 7.2–7.4 commented out with [TK]; subtitle truncated; Berger & Pope "NCAA football" → "NCAA basketball"; "in JQAS" dropped for non-JQAS works.
 - README counts and `run_all.sh` updated to v2. `Sloan_SSAC27_Abstract_NFL_v2.{md,docx}` added.
 - Not regenerated: `figures/interactive/` (still v1 numbers).
+
+## v3 — "The Momentum Mirage" (SSAC 2027 reframe)
+
+- `code/05_mirage_analyses.R` (new): Gelbach decomposition of the raw H1 gap; TOST equivalence tests for H1–H3 (±1, ±2 pp) with bounds in yards and EP; momentum-swing categories; kickoff-type EPA cost (onside labeled; squibs not labeled, so "short" = lands at/beyond receiving 15); no-momentum simulation for game-FE bias. Outputs `*_v3`; v1/v2 outputs unchanged. Wired into `run_all.sh`.
+- Found while building it: v2's three-and-out rule counted every pbp row (kickoffs, timeouts, quarter ends), so only 1 punt entered H1. H1 is now described as takeaways / turnovers on downs / safeties; a snap-count version (30,475 stops) is reported: H1 −1.3 (0.4).
+- `code/06_check_text_numbers.py` (new): checks the paper's numbers against the outputs (0 failures).
+- `paper_v3.tex/.pdf`, `references_v3.bib` (adds Gelbach 2016, Lakens 2017, Nickell 1981; DOIs checked on Crossref). Discussion and Conclusion written. README updated. `Sloan_SSAC27_Abstract_NFL_v3.md` added (untracked, like v1/v2).

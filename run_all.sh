@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# run_all.sh — full replication pipeline for "Drive-Level Momentum in the NFL"
+# run_all.sh — full replication pipeline for "The Momentum Mirage" (v3; formerly "Drive-Level Momentum in the NFL")
 #
-# Reproduces every figure, table, and headline number in momentum.tex
+# Reproduces every figure, table, and headline number in paper_v3.tex
 # starting either from the live nflfastR feed (default) or from the cached
 # drives.csv (skip step 1 if drives.rds is already present).
 #
@@ -22,16 +22,19 @@ Rscript code/02_analyze_momentum.R 2>&1 | tee replication_logs/02_analyze_moment
 echo "=== Step 3: Robustness gauntlet ==="
 Rscript code/03_robustness.R 2>&1 | tee replication_logs/03_robustness.log
 
+echo "=== Step 3b: v3 Momentum Mirage analyses (decomposition, TOST, swings, kickoffs, FE simulation) ==="
+Rscript code/05_mirage_analyses.R 2>&1 | tee replication_logs/05_mirage_analyses.log
+
 echo "=== Step 4: Capture sessionInfo ==="
 R --vanilla --quiet -e 'sessionInfo()' > replication_logs/sessionInfo.txt 2>&1
 
-echo "=== Step 5: Compile paper_v2.tex ==="
+echo "=== Step 5: Compile paper_v3.tex (The Momentum Mirage) ==="
 if command -v pdflatex >/dev/null 2>&1; then
-  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass1.log 2>&1
-  bibtex paper_v2 > replication_logs/bibtex.log 2>&1 || true
-  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass2.log 2>&1
-  pdflatex -interaction=nonstopmode paper_v2.tex > replication_logs/pdflatex_pass3.log 2>&1
-  echo "Compiled: paper_v2.pdf"
+  pdflatex -interaction=nonstopmode paper_v3.tex > replication_logs/pdflatex_pass1.log 2>&1
+  bibtex paper_v3 > replication_logs/bibtex.log 2>&1 || true
+  pdflatex -interaction=nonstopmode paper_v3.tex > replication_logs/pdflatex_pass2.log 2>&1
+  pdflatex -interaction=nonstopmode paper_v3.tex > replication_logs/pdflatex_pass3.log 2>&1
+  echo "Compiled: paper_v3.pdf"
 else
   echo "pdflatex not found; skipping LaTeX compile."
 fi

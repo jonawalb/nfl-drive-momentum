@@ -1,7 +1,7 @@
-# Drive-Level Momentum in the NFL — Replication Package
+# The Momentum Mirage (NFL drive-level momentum) — Replication Package
 
-**Paper:** *Drive-Level Momentum in the NFL: Field Position Eats Most of It, and What Remains Cuts the Other Way*
-**Target venue:** Journal of Quantitative Analysis in Sports (JQAS)
+**Paper (v3, current):** *The Momentum Mirage: Field Position, Game Fixed Effects, and the Price of Chasing Swings in the NFL* (`paper_v3.tex`)
+**Target venue:** MIT Sloan Sports Analytics Conference 2027 (SSAC). Earlier versions targeted JQAS.
 **Author:** [redacted for blind review]
 **Replication package version:** 1.0 (2026-05-08)
 
@@ -17,7 +17,9 @@ figure in the paper, starting either from the raw `nflfastR` play-by-play feed
 | 1 | `code/01_build_drives.R` | `nflfastR` 2010–2024 pbp (live fetch) | `data/drives_v2.{rds,csv}` | ~3 min |
 | 2 | `code/02_analyze_momentum.R` | `data/drives_v2.rds` | `data/{models,key_nums}_v2.rds`, `tables/{tab_descrip,tab_h1_progression,tab_all_channels,tab_gamefe_placebo}_v2.tex`, `figures/fig{1,2}_*_v2` | ~45 sec |
 | 3 | `code/03_robustness.R` | `data/drives_v2.rds` | `data/robustness_v2.rds` (R1–R7 robustness gauntlet: flexible FP, placebo, logit, permutation, post-kickoff/punt, heterogeneity, era split) | ~3 min |
-| 4 | `pdflatex` + `bibtex` | `paper_v2.tex`, `references_NEWEST.bib`, `figures/*`, `tables/*` | `paper_NEWEST.pdf` | ~15 sec |
+| 3b | `code/05_mirage_analyses.R` | `data/drives_v2.rds` + `nflfastR` pbp (live fetch) | `data/key_nums_v3.{rds,json}`, `tables/tab_{decomp,tost,swing,kickoff,nickell}_v3.tex`, `figures/fig3_decomp_v3.{pdf,png}` | ~10 min |
+| 4 | `pdflatex` + `bibtex` | `paper_v3.tex`, `references_v3.bib`, `figures/*`, `tables/*` | `paper_v3.pdf` | ~15 sec |
+| QA | `code/06_check_text_numbers.py` | `paper_v3.tex`, `data/key_nums_v{2,3}` | claim-by-claim number check | ~5 sec |
 
 A one-line wrapper `run_all.sh` runs steps 1–4 sequentially with logging.
 
@@ -53,7 +55,9 @@ bash run_all.sh
 Rscript code/01_build_drives.R          # (Optional) rebuild drives from nflfastR
 Rscript code/02_analyze_momentum.R      # main regressions, figures, tables
 Rscript code/03_robustness.R            # 7-check robustness gauntlet
-pdflatex paper_v2.tex && bibtex paper_v2 && pdflatex paper_v2.tex && pdflatex paper_v2.tex
+Rscript code/05_mirage_analyses.R       # v3 analyses (decomposition, TOST, swings, kickoffs, FE simulation)
+pdflatex paper_v3.tex && bibtex paper_v3 && pdflatex paper_v3.tex && pdflatex paper_v3.tex
+python3 code/06_check_text_numbers.py paper_v3.tex   # accuracy check of the text
 ```
 
 All scripts use `here::here()` and resolve paths relative to the project root
@@ -67,6 +71,9 @@ LICENSE                        # MIT (code) + data lineage notes
 README.md                      # this file
 run_all.sh                     # One-shot pipeline runner
 
+paper_v3.tex                   # Current paper: "The Momentum Mirage" (SSAC 2027)
+paper_v3.pdf                   # Compiled v3 paper
+references_v3.bib              # Bibliography for paper_v3.tex (adds Gelbach, Lakens, Nickell)
 paper_v2.tex                   # Corrected paper (2026-10-05 field-position fix)
 paper_v2.pdf                   # Compiled corrected paper
 paper_NEWEST.tex               # v1 paper (superseded; kickoff-spot field position)
@@ -85,6 +92,9 @@ code/
   01_build_drives.R            # Builds drive-level dataset from nflfastR pbp
   02_analyze_momentum.R        # Runs all regressions, figures, tables, key_nums
   03_robustness.R              # R1-R7 robustness gauntlet (CRITICAL pre-submission)
+  05_mirage_analyses.R         # v3: Gelbach decomposition, TOST, yards/EP bounds, swing moments,
+                               #     kickoff cost, no-momentum simulation for game FE
+  06_check_text_numbers.py     # v3: checks every number in the paper text against the outputs
 
 data/
   drives.csv                   # Drive-level dataset (~86k drives, 24 MB)
@@ -125,6 +135,19 @@ the headline specification: with ~18 drives per game, game FE bias lagged
 outcomes downward (a lead placebo for the opponent's *next* drive is −10.4 pp
 under game FE). v2 outputs carry a `_v2` suffix; v1 outputs are kept
 unchanged for audit. The manuscript is `paper_v2.tex`.
+
+## v3: The Momentum Mirage (2026-10-05)
+
+There are a few changes to v2. First, the paper is now titled “The Momentum Mirage” and is intended for the MIT Sloan Sports Analytics Conference. Second, there are a number of additional analyses in code/05_mirage_analyses.R: a Gelbach decomposition of the raw gap in defensive stops, equivalence tests on the three channels of momentum, the equivalence test bounds in yards and expected points, estimates on plays immediately following a momentum swing, the expected points cost of onside kicks and short kickoffs, and the bias introduced by game fixed effects when including lagged outcomes (using a simulation where momentum does not exist). Third, the paper includes a correction from v2. There was an error in the construction of the defensive stop indicator in v2: all rows in the play-by-play data (including non-plays) counted toward the three play rule. This meant that only one punt was ever included in the defensive stop indicator and that the measure of H1 was really just takeaways, turnovers on downs, and safeties. The new version includes the snap count version of the indicator as well as the original version. The code for v1 and v2, as well as the output, will remain on this repo.
+
+Headline v3 numbers (from `data/key_nums_v3.json`; percentage points unless noted):
+
+- Gelbach decomposition of the 16.7-pt raw gap (N = 78,197): field position 17.0 (102%), clock −0.3, score −0.1, possessing-team FE +0.2, residual −0.1 (s.e. 0.5)
+- TOST (90% CI; tightest equivalence bound; in yards / expected points): H1 [−1.4, 0.4], 1.42 = 1.74 yd / 0.11 EP; H3 [−1.2, −0.0], 1.17 = 1.43 yd / 0.09 EP; H2 [1.6, 3.0], 2.99 = 3.66 yd / 0.23 EP. Slopes: 0.82 pp and 0.061 EP per yard
+- Snap-count stops (adds 18,652 three-and-out punts; 30,475 stop drives): H1 −1.3 (0.4), H3 −1.2 (0.4)
+- Swing moments vs. reference opponent drive: takeaway +0.7 (0.7), fourth-down stop −5.4 (0.8); long (≥40 yd) minus short TD against 0.0 (1.3); defensive/return minus short TD 0.2 (1.1)
+- Kickoffs after scores, 2010–2023, discretionary states (EPA vs. standard): short −0.55 (0.04, N = 635), onside −0.83 (0.15, N = 196; 19.4% recovered). Squib kicks are not labeled in nflfastR; "short" = lands at or beyond the receiving 15
+- No-momentum simulation (100 draws; 21.1 drives per game): game FE give H2 −5.3, H3 −6.3, lead placebo −6.2; headline FE give H2 +1.2, H3 +0.7
 
 ## Headline numbers (verification targets, v2)
 

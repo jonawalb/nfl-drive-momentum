@@ -1,0 +1,27 @@
+\begin{table}[htbp]
+\centering
+\caption{\label{tab:swing} Scoring after momentum-swing moments. Percentage-point change in the probability that the next drive ends in a score, from linear probability models with the headline controls (field position at the first scrimmage play, score differential, quarter, half-seconds remaining, home) and possessing-team, opponent, and season fixed effects. Panel A: categories of the opponent possession immediately before the drive; reference category is an opponent drive ending in a punt after four or more plays, a missed field goal, or another non-scoring outcome (N = 79,367). Panel B: the team that made the big play, on its next offensive drive, also controlling for whether its previous drive was a touchdown and whether the opponent just scored (N = 78,004). Standard errors two-way clustered by game and possessing team.}
+\begin{tabular}{lrrr}
+\toprule
+Preceding event & Est. (pp) & (s.e.) & N \\
+\midrule
+\multicolumn{4}{l}{\emph{A. Drive right after the event}} \\
+Takeaway (INT or fumble lost) & 0.7 & (0.7) & 8,660 \\
+Fourth-down stop & -5.4 & (0.8) & 2,942 \\
+Punt after $\leq$3 scrimmage snaps, or safety & -1.3 & (0.4) & 18,872 \\
+Opponent field goal & -0.8 & (0.6) & 11,467 \\
+Opponent offensive TD, scoring play $<$40 yds & -1.3 & (0.5) & 15,637 \\
+Opponent offensive TD, scoring play $\geq$40 yds & -1.3 & (1.1) & 1,968 \\
+Opponent defensive or return TD & -1.1 & (1.0) & 1,302 \\
+\multicolumn{4}{l}{\emph{Contrasts}} \\
+\quad Long TD minus short TD & 0.0 & (1.3) &  \\
+\quad Defensive/return TD minus short TD & 0.2 & (1.1) &  \\
+\quad Takeaway minus three-and-out & 2.0 & (0.7) &  \\
+\quad Fourth-down stop minus three-and-out & -4.1 & (0.9) &  \\
+\midrule
+\multicolumn{4}{l}{\emph{B. The play-maker's next offensive drive}} \\
+Own prior drive was a $\geq$40-yd TD (vs.\ other own TD) & -0.1 & (1.2) & 1,839 \\
+Own defense or returners just scored a TD & -0.1 & (1.6) & 1,054 \\
+\bottomrule
+\end{tabular}
+\end{table}

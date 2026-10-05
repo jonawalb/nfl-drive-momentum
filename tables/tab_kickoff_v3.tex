@@ -1,0 +1,13 @@
+\begin{table}[htbp]
+\centering
+\caption{\label{tab:kickoff} The price of chasing momentum on the kickoff. Kicking team's expected points added (EPA, \texttt{nflfastR}) on post-score kickoffs, 2010--2023 regulation, excluding the final five minutes of the fourth quarter and final two minutes of the second quarter. Onside kicks are labeled in the play-by-play; squib kicks are not, so short kicks are identified by landing spot and include pooch kicks. Difference vs.\ standard: OLS with kicking-team score margin, quarter, and season fixed effects; standard errors clustered by game.}
+\begin{tabular}{lrrrr}
+\toprule
+Kick type & N & Mean EPA & Diff.\ vs.\ standard & (s.e.) \\
+\midrule
+Standard (lands inside the 15 or deeper) & 23,219 & -0.00 & --- & --- \\
+Short, non-onside (lands at the 15 or beyond) & 635 & -0.63 & -0.55 & (0.04) \\
+Onside & 196 & -0.87 & -0.83 & (0.15) \\
+\bottomrule
+\end{tabular}
+\end{table}
